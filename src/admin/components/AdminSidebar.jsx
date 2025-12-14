@@ -23,13 +23,13 @@ export default function AdminSidebar() {
           <Link to={"/admin-home"} className="flex items-center gap-3 hover:text-red-400 cursor-pointer">
             <FaHome /> Dashboard
           </Link>
-          <Link to={"/admin-user"} className="flex items-center gap-3 hover:text-red-400 cursor-pointer">
+          <Link to={"/admin-enquiry"} className="flex items-center gap-3 hover:text-red-400 cursor-pointer">
             <FaUsers /> Enquiry
           </Link>
           <Link to={"/admin-trainer"} className="flex items-center gap-3 hover:text-red-400 cursor-pointer">
             <FaUserTie /> Trainers
           </Link>
-          <Link to={"/nn"} className="flex items-center gap-3 hover:text-red-400 cursor-pointer">
+          <Link to={"/admin-user"} className="flex items-center gap-3 hover:text-red-400 cursor-pointer">
             <FaUserTie /> Members
           </Link>
           <Link to={"/admin-payment"} className="flex items-center gap-3 hover:text-red-400 cursor-pointer">

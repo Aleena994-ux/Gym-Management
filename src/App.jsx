@@ -17,6 +17,7 @@ import TrainerChat from './trainer/pages/TrainerChat'
 import WorkoutPlan from './trainer/pages/WorkoutPlan'
 import UserWorkoutPlan from './user/pages/UserWorkoutPlan'
 import { ToastContainer } from 'react-toastify'
+import AdminEnquiry from './admin/pages/AdminEnquiry'
 
 function App() {
  
@@ -32,9 +33,10 @@ function App() {
 
   {/* admin */}
    <Route path="/admin-home" element={<AdminHome />} />
-    <Route path="/admin-user" element={<AdminUser />} />
+    <Route path="/admin-enquiry" element={<AdminEnquiry />} />
      <Route path="/admin-trainer" element={<AdminTrainer/>} />
      <Route path="/admin-payment" element={<AdminPayment/>} />
+     <Route path="/admin-user" element={<AdminUser/>} />
 
      {/* user */}
      <Route path="/user-home" element={<UserHome/>} />
