@@ -10,14 +10,17 @@ import AdminTrainer from './admin/pages/AdminTrainer'
 import AdminPayment from './admin/pages/AdminPayment'
 import UserHome from './user/pages/UserHome'
 import UserRequest from './user/pages/UserRequest'
-import UserChat from './user/pages/UserChat'
 import TrainerHome from './trainer/pages/TrainerHome'
 import AssignedUsers from './trainer/pages/AssignedUsers'
-import TrainerChat from './trainer/pages/TrainerChat'
 import WorkoutPlan from './trainer/pages/WorkoutPlan'
 import UserWorkoutPlan from './user/pages/UserWorkoutPlan'
 import { ToastContainer } from 'react-toastify'
 import AdminEnquiry from './admin/pages/AdminEnquiry'
+import UserAttendance from './user/pages/UserAttendance'
+import AdminAttendance from './admin/pages/AdminAttendance'
+import UserMembership from './user/pages/UserMembership'
+import PaymentSuccess from './user/pages/PaymentSuccess'
+import PaymentError from './user/pages/PaymentError'
 
 function App() {
  
@@ -37,18 +40,22 @@ function App() {
      <Route path="/admin-trainer" element={<AdminTrainer/>} />
      <Route path="/admin-payment" element={<AdminPayment/>} />
      <Route path="/admin-user" element={<AdminUser/>} />
+     <Route path="/admin-attendance" element={<AdminAttendance/>} />
 
      {/* user */}
      <Route path="/user-home" element={<UserHome/>} />
      <Route path="/user-request" element={<UserRequest/>} />
-     <Route path="/user-chat" element={<UserChat/>} />
+     <Route path="/user-attendances" element={<UserAttendance/>} />
       <Route path="/user-workoutplan" element={<UserWorkoutPlan/>} />
+      <Route path="/user-membership" element={<UserMembership/>} />
+      <Route path="/payment-success" element={<PaymentSuccess/>} />
+      <Route path="/payment-error" element={<PaymentError/>} />
+      
 
      {/* trainer */}
       <Route path="/trainer-home" element={<TrainerHome/>} />
        <Route path="/assigned-users" element={<AssignedUsers/>} />
        <Route path="/workout-plan" element={<WorkoutPlan/>} />
-        <Route path="/trainer-chat" element={<TrainerChat/>} />
         
   </Routes>
   <ToastContainer

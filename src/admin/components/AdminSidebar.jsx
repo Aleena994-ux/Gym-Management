@@ -35,6 +35,9 @@ export default function AdminSidebar() {
           <Link to={"/admin-payment"} className="flex items-center gap-3 hover:text-red-400 cursor-pointer">
             <FaMoneyBill /> Payments
           </Link>
+          <Link to={"/admin-attendance"} className="flex items-center gap-3 hover:text-red-400 cursor-pointer">
+            <FaMoneyBill /> Attendance
+          </Link>
         </nav>
       </div>
 

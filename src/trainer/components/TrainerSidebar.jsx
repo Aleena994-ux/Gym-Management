@@ -1,8 +1,27 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { FaSignOutAlt } from "react-icons/fa";
+import { toast } from "react-toastify";
 
 const TrainerSidebar = () => {
+   const navigate = useNavigate();
+  
+    const handleLogout = () => {
+      // Remove user data
+      sessionStorage.removeItem("existingUser");
+      sessionStorage.removeItem("token");
+  
+      // Toast success message
+      toast.success("Logged out successfully!", {
+        position: "top-center",
+        autoClose: 2000,
+      });
+  
+      // Redirect after 2 sec
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000);
+    };
   return (
     <div className="w-64 bg-gray-900 text-white min-h-screen p-6 flex flex-col justify-between">
       <div>
@@ -11,13 +30,12 @@ const TrainerSidebar = () => {
           <Link to="/trainer-home" className="hover:text-red-400">Home</Link>
           <Link to="/assigned-users" className="hover:text-red-400">Assigned Users</Link>
           <Link to="/workout-plan" className="hover:text-red-400">Workout Plan</Link>
-          <Link to="/trainer-chat" className="hover:text-red-400">Trainer Chat</Link>
         </nav>
       </div>
 
       {/* Logout Button */}
       <div>
-        <button className="flex items-center gap-2 w-full hover:text-red-400 cursor-pointer">
+        <button onClick={handleLogout} className="flex items-center gap-2 w-full hover:text-red-400 cursor-pointer">
           <FaSignOutAlt /> Logout
         </button>
       </div>

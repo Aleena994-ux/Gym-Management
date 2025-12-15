@@ -1,109 +1,219 @@
-import React, { useState } from "react";
-import TrainerSidebar from "../components/TrainerSidebar";
+import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import {
+  assignWorkoutPlanAPI,
+  getAllWorkoutPlansAPI,
+  getAllUsersAPI, // Add this if not present
+} from "../../services/allAPI";
+import TrainerSidebar from "../components/TrainerSidebar"; // Use TrainerSidebar
 
-const WorkoutPlan = () => {
-  const [view, setView] = useState(""); // "", "assign", "previous"
+function WorkoutPlan() { // Renamed from AdminWorkoutPlan
+  const [token, setToken] = useState("");
+  const [users, setUsers] = useState([]);
+  const [plans, setPlans] = useState([]);
+  const [viewAssign, setViewAssign] = useState(true);
+
+  const [planDetails, setPlanDetails] = useState({
+    userId: "",
+    planType: "",
+    workoutDetails: "",
+    dietDetails: "",
+  });
+
+  // get token
+  useEffect(() => {
+    const storedToken = sessionStorage.getItem("token");
+    if (storedToken) setToken(storedToken);
+  }, []);
+
+  // fetch users
+  const getAllUsers = async () => {
+    try {
+      const result = await getAllUsersAPI({
+        Authorization: `Bearer ${token}`,
+      });
+      if (result.status === 200) {
+        setUsers(result.data);
+      }
+    } catch (error) {
+      toast.error("Failed to fetch users");
+    }
+  };
+
+  // fetch plans
+  const getAllPlans = async () => {
+    try {
+      const result = await getAllWorkoutPlansAPI({
+        Authorization: `Bearer ${token}`,
+      });
+      if (result.status === 200) {
+        setPlans(result.data);
+      }
+    } catch (error) {
+      toast.error("Failed to fetch workout plans");
+    }
+  };
+
+  useEffect(() => {
+    if (token) {
+      getAllUsers();
+      getAllPlans();
+    }
+  }, [token]);
+
+  // assign plan
+  const handleAssignPlan = async () => {
+    const { userId, planType, workoutDetails, dietDetails } = planDetails;
+    if (!userId || !planType || !workoutDetails || !dietDetails) {
+      toast.info("Fill all fields");
+      return;
+    }
+
+    try {
+      const result = await assignWorkoutPlanAPI(planDetails, {
+        Authorization: `Bearer ${token}`,
+      });
+
+      if (result.status === 200) {
+        toast.success("Workout plan assigned");
+        setPlanDetails({
+          userId: "",
+          planType: "",
+          workoutDetails: "",
+          dietDetails: "",
+        });
+        getAllPlans(); // Refresh
+      } else {
+        toast.error("Failed to assign");
+      }
+    } catch (error) {
+      toast.error("Error assigning plan");
+    }
+  };
 
   return (
-    <div className="flex bg-black text-white min-h-screen">
+    <div className="flex bg-black min-h-screen text-white">
       <TrainerSidebar />
 
-      <div className="p-10 w-full space-y-8">
-        <h1 className="text-3xl font-bold">Trainer Plans Dashboard</h1>
+      <main className="flex-1 p-10">
+        {/* Tabs */}
+        <div className="flex gap-6 mb-8">
+          <button
+            onClick={() => setViewAssign(true)}
+            className={`px-6 py-2 rounded ${
+              viewAssign ? "bg-red-700" : "bg-gray-700"
+            }`}
+          >
+            Assign Plan
+          </button>
 
-        {/* Assigned Plans Table */}
-        <div className="bg-gray-900 p-6 rounded-xl shadow-md overflow-x-auto">
-          <h2 className="text-2xl font-semibold mb-4">Assigned Plans</h2>
-          <table className="min-w-full table-auto text-white">
-            <thead>
-              <tr className="border-b border-gray-700">
-                <th className="px-4 py-2 text-left">User</th>
-                <th className="px-4 py-2 text-left">Plan Type</th>
-                <th className="px-4 py-2 text-left">Status</th>
-                <th className="px-4 py-2 text-left">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="border-b border-gray-700 hover:bg-gray-800">
-                <td className="px-4 py-2">Jane Smith</td>
-                <td className="px-4 py-2">Workout + Diet</td>
-                <td className="px-4 py-2">Active</td>
-                <td className="px-4 py-2 space-x-2">
-                  <button
-                    className="bg-red-600 hover:bg-red-700 px-3 py-1 rounded-lg"
-                    onClick={() => setView("assign")}
-                  >
-                    Assign Plan
-                  </button>
-                  <button
-                    className="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded-lg"
-                    onClick={() => setView("previous")}
-                  >
-                    Previously Assigned Plans
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <button
+            onClick={() => setViewAssign(false)}
+            className={`px-6 py-2 rounded ${
+              !viewAssign ? "bg-red-700" : "bg-gray-700"
+            }`}
+          >
+            View Plans
+          </button>
         </div>
 
-        {/* Conditional Render: Assign Plan Form */}
-        {view === "assign" && (
-          <div className="bg-gray-900 p-6 rounded-xl shadow-md space-y-4">
-            <h2 className="text-2xl font-semibold">Assign New Plan to Jane Smith</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <select className="p-3 rounded-lg bg-gray-800 text-white">
-                <option>Plan Type</option>
-                <option>Workout Only</option>
-                <option>Diet Only</option>
-                <option>Workout + Diet</option>
-              </select>
-              <button className="bg-red-600 hover:bg-red-700 py-3 rounded-lg font-bold">
-                Assign
-              </button>
-              <button
-                className="bg-gray-600 hover:bg-gray-700 py-3 rounded-lg font-bold"
-                onClick={() => setView("")}
+        {/* ASSIGN PLAN */}
+        {viewAssign && (
+          <div className="bg-gray-900 p-6 rounded-xl border border-gray-800">
+            <h2 className="text-2xl font-bold mb-6">Assign Workout Plan</h2>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              <select
+                value={planDetails.userId}
+                onChange={(e) =>
+                  setPlanDetails({ ...planDetails, userId: e.target.value })
+                }
+                className="p-3 bg-black border border-gray-700 rounded"
               >
-                Cancel
+                <option value="">Select User</option>
+                {users.map((u) => (
+                  <option key={u._id} value={u._id}>
+                    {u.username}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={planDetails.planType}
+                onChange={(e) =>
+                  setPlanDetails({ ...planDetails, planType: e.target.value })
+                }
+                className="p-3 bg-black border border-gray-700 rounded"
+              >
+                <option value="">Plan Type</option>
+                <option value="Workout">Workout</option>
+                <option value="Diet">Diet</option>
+                <option value="Workout + Diet">Workout + Diet</option>
+              </select>
+
+              <textarea
+                placeholder="Workout Details"
+                value={planDetails.workoutDetails}
+                onChange={(e) =>
+                  setPlanDetails({
+                    ...planDetails,
+                    workoutDetails: e.target.value,
+                  })
+                }
+                className="p-3 bg-black border border-gray-700 rounded col-span-2"
+              />
+
+              <textarea
+                placeholder="Diet Details"
+                value={planDetails.dietDetails}
+                onChange={(e) =>
+                  setPlanDetails({
+                    ...planDetails,
+                    dietDetails: e.target.value,
+                  })
+                }
+                className="p-3 bg-black border border-gray-700 rounded col-span-2"
+              />
+            </div>
+
+            <div className="flex justify-end mt-6">
+              <button
+                onClick={handleAssignPlan}
+                className="bg-green-700 px-6 py-3 rounded hover:bg-green-600"
+              >
+                Assign Plan
               </button>
             </div>
           </div>
         )}
 
-        {/* Conditional Render: Previously Assigned Plan Details */}
-        {view === "previous" && (
-          <div className="bg-gray-900 p-6 rounded-xl shadow-md space-y-4">
-            <h2 className="text-2xl font-semibold">Previously Assigned Plan for Jane Smith</h2>
-            
-            {/* Workout Plan */}
-            <div className="bg-gray-800 p-4 rounded-lg">
-              <h3 className="font-bold mb-2">Workout Plan</h3>
-              <p>Bench Press - 3x12 - Rest 60s</p>
-              <p>Squats - 4x10 - Rest 90s</p>
-              <p>Pull-Ups - 3x8 - Rest 60s</p>
-            </div>
-
-            {/* Diet Plan */}
-            <div className="bg-gray-800 p-4 rounded-lg">
-              <h3 className="font-bold mb-2">Diet Plan</h3>
-              <p>Breakfast: Oats with protein shake</p>
-              <p>Lunch: Grilled chicken with brown rice</p>
-              <p>Snacks: Nuts and fruits</p>
-              <p>Dinner: Salmon with steamed veggies</p>
-            </div>
-
-            <button
-              className="bg-gray-600 hover:bg-gray-700 py-2 px-4 rounded-lg font-bold"
-              onClick={() => setView("")}
-            >
-              Close
-            </button>
+        {/* VIEW PLANS */}
+        {!viewAssign && (
+          <div className="grid md:grid-cols-2 gap-6">
+            {plans.length > 0 ? (
+              plans.map((plan) => (
+                <div
+                  key={plan._id}
+                  className="bg-gray-900 p-5 rounded-lg border border-gray-800"
+                >
+                  <h3 className="text-xl font-bold">
+                    {plan.userId?.username}
+                  </h3>
+                  <p className="text-gray-400">
+                    Plan: {plan.planType}
+                  </p>
+                  <p className="mt-2">{plan.workoutDetails}</p>
+                  <p className="mt-2">{plan.dietDetails}</p>
+                </div>
+              ))
+            ) : (
+              <p>No workout plans found</p>
+            )}
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
-};
+}
 
-export default WorkoutPlan;
+export default WorkoutPlan;

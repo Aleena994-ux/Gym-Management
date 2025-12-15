@@ -35,8 +35,12 @@ function UserSidebar() {
             User Home
           </Link>
 
-          <Link to="/user-chat" className="hover:text-red-400">
-            Chat with Trainer
+          <Link to="/user-attendances" className="hover:text-red-400">
+           Attendance
+          </Link>
+
+          <Link to="/user-membership" className="hover:text-red-400">
+           Membership
           </Link>
 
           <Link to="/user-workoutplan" className="hover:text-red-400">

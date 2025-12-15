@@ -2,11 +2,12 @@ import React, { useState } from "react";
 import { FaHome, FaUserCircle } from "react-icons/fa";
 import { GoEye, GoEyeClosed } from "react-icons/go";
 import { Link, useNavigate } from "react-router-dom";
-import { loginAPI, registerAPI } from "../../services/allAPI";
+import { loginAPI, registerAPI, trainerLoginAPI } from "../../services/allAPI"; // Added trainerLoginAPI
 import { toast } from "react-toastify";
 
 function Auth({ register }) {
   const [viewPassword, setViewPassword] = useState(false);
+  const [role, setRole] = useState("user"); // Added role state
   const [userDetails, setUserDetails] = useState({
     username: "",
     email: "",
@@ -15,7 +16,7 @@ function Auth({ register }) {
 
   const navigate = useNavigate();
 
-  // Register handler
+  // Register handler (unchanged)
   const HandleRegister = async () => {
     const { username, email, password } = userDetails;
     if (!username || !email || !password) {
@@ -39,7 +40,7 @@ function Auth({ register }) {
     }
   };
 
-  // Login handler
+  // Login handler (updated for trainer)
   const handleLogin = async () => {
     const { email, password } = userDetails;
     if (!email || !password) {
@@ -48,19 +49,21 @@ function Auth({ register }) {
     }
 
     try {
-      const result = await loginAPI(userDetails);
+      let result;
+      if (role === "trainer") {
+        result = await trainerLoginAPI({ email, password });
+      } else {
+        result = await loginAPI(userDetails);
+      }
+
       if (result.status === 200) {
         // Save session
-        sessionStorage.setItem(
-          "existingUser",
-          JSON.stringify(result.data.existingUser)
-        );
+        sessionStorage.setItem("existingUser", JSON.stringify(result.data.trainer || result.data.existingUser));
         sessionStorage.setItem("token", result.data.token);
 
         toast.success("Login Successful");
 
         // Navigate based on role
-        const role = result.data.existingUser.role;
         if (role === "admin") navigate("/admin-home");
         else if (role === "trainer") navigate("/trainer-home");
         else navigate("/user-home");
@@ -105,6 +108,21 @@ function Auth({ register }) {
         </h1>
 
         <form>
+          {!register && ( // Add role select for login only
+            <div className="my-4">
+              <label className="text-sm text-gray-300">Role</label>
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                className="bg-zinc-800 p-2 w-full rounded mt-1 text-white border border-zinc-700"
+              >
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
+                <option value="trainer">Trainer</option>
+              </select>
+            </div>
+          )}
+
           {register && (
             <div className="my-4">
               <label className="text-sm text-gray-300">Username</label>

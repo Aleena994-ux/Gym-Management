@@ -9,7 +9,8 @@ function AdminTrainer() {
     name: "",
     email: "",
     experience: "",
-    specialization: ""
+    specialization: "",
+    password: "" // Added password
   });
   const [token, setToken] = useState("");
   const [allTrainers, setAllTrainers] = useState([]);
@@ -19,13 +20,13 @@ function AdminTrainer() {
 
   // Reset form
   const reset = () => {
-    setTrainerDetails({ name: "", email: "", experience: "", specialization: "" });
+    setTrainerDetails({ name: "", email: "", experience: "", specialization: "", password: "" }); // Added password reset
   };
 
   // Add trainer
   const handleAddTrainer = async () => {
-    const { name, email, experience, specialization } = trainerDetails;
-    if (!name || !email || !experience || !specialization) {
+    const { name, email, experience, specialization, password } = trainerDetails; // Added password
+    if (!name || !email || !experience || !specialization || !password) { // Added password check
       toast.info("Fill the form completely");
       return;
     }
@@ -33,7 +34,7 @@ function AdminTrainer() {
     try {
       // Make API call
       const result = await addTrainerAPI(
-        { name, email, experience, specialization },
+        { name, email, experience, specialization, password }, // Added password
         { Authorization: `Bearer ${token}` }
       );
 
@@ -201,6 +202,19 @@ function AdminTrainer() {
                     <option value="Nutrition">Nutrition</option>
                     <option value="General Fitness">General Fitness</option>
                   </select>
+                </div>
+
+                <div>
+                  <label className="block text-gray-300 mb-2">Password</label>
+                  <input
+                    type="password"
+                    value={trainerDetails.password}
+                    onChange={(e) =>
+                      setTrainerDetails({ ...trainerDetails, password: e.target.value })
+                    }
+                    className="w-full p-3 bg-black border border-gray-700 rounded-lg text-white"
+                    placeholder="Enter password"
+                  />
                 </div>
               </div>
 
