@@ -3,11 +3,11 @@ import { toast } from "react-toastify";
 import {
   assignWorkoutPlanAPI,
   getAllWorkoutPlansAPI,
-  getAllUsersAPI, // Add this if not present
+  getAllUsersForTrainerAPI,
 } from "../../services/allAPI";
-import TrainerSidebar from "../components/TrainerSidebar"; // Use TrainerSidebar
+import TrainerSidebar from "../components/TrainerSidebar";
 
-function WorkoutPlan() { // Renamed from AdminWorkoutPlan
+function WorkoutPlan() {
   const [token, setToken] = useState("");
   const [users, setUsers] = useState([]);
   const [plans, setPlans] = useState([]);
@@ -20,32 +20,38 @@ function WorkoutPlan() { // Renamed from AdminWorkoutPlan
     dietDetails: "",
   });
 
-  // get token
+  // Get token from session
   useEffect(() => {
     const storedToken = sessionStorage.getItem("token");
     if (storedToken) setToken(storedToken);
   }, []);
 
-  // fetch users
+  // Fetch all active users assigned to this trainer
   const getAllUsers = async () => {
+    if (!token) return;
+
     try {
-      const result = await getAllUsersAPI({
+      const result = await getAllUsersForTrainerAPI({
         Authorization: `Bearer ${token}`,
       });
+
       if (result.status === 200) {
-        setUsers(result.data);
+        setUsers(result.data); // active members only already filtered on backend
       }
     } catch (error) {
       toast.error("Failed to fetch users");
     }
   };
 
-  // fetch plans
+  // Fetch all workout plans (plain, no populate)
   const getAllPlans = async () => {
+    if (!token) return;
+
     try {
       const result = await getAllWorkoutPlansAPI({
         Authorization: `Bearer ${token}`,
       });
+
       if (result.status === 200) {
         setPlans(result.data);
       }
@@ -61,9 +67,10 @@ function WorkoutPlan() { // Renamed from AdminWorkoutPlan
     }
   }, [token]);
 
-  // assign plan
+  // Assign plan to user
   const handleAssignPlan = async () => {
     const { userId, planType, workoutDetails, dietDetails } = planDetails;
+
     if (!userId || !planType || !workoutDetails || !dietDetails) {
       toast.info("Fill all fields");
       return;
@@ -82,9 +89,9 @@ function WorkoutPlan() { // Renamed from AdminWorkoutPlan
           workoutDetails: "",
           dietDetails: "",
         });
-        getAllPlans(); // Refresh
+        getAllPlans(); // refresh plans
       } else {
-        toast.error("Failed to assign");
+        toast.error("Failed to assign plan");
       }
     } catch (error) {
       toast.error("Error assigning plan");
@@ -106,7 +113,6 @@ function WorkoutPlan() { // Renamed from AdminWorkoutPlan
           >
             Assign Plan
           </button>
-
           <button
             onClick={() => setViewAssign(false)}
             className={`px-6 py-2 rounded ${
@@ -191,21 +197,22 @@ function WorkoutPlan() { // Renamed from AdminWorkoutPlan
         {!viewAssign && (
           <div className="grid md:grid-cols-2 gap-6">
             {plans.length > 0 ? (
-              plans.map((plan) => (
-                <div
-                  key={plan._id}
-                  className="bg-gray-900 p-5 rounded-lg border border-gray-800"
-                >
-                  <h3 className="text-xl font-bold">
-                    {plan.userId?.username}
-                  </h3>
-                  <p className="text-gray-400">
-                    Plan: {plan.planType}
-                  </p>
-                  <p className="mt-2">{plan.workoutDetails}</p>
-                  <p className="mt-2">{plan.dietDetails}</p>
-                </div>
-              ))
+              plans.map((plan) => {
+                const user = users.find((u) => u._id === plan.userId); // match userId
+                return (
+                  <div
+                    key={plan._id}
+                    className="bg-gray-900 p-5 rounded-lg border border-gray-800"
+                  >
+                    <h3 className="text-xl font-bold">
+                      {user?.username || "Unknown"}
+                    </h3>
+                    <p className="text-gray-400">Plan: {plan.planType}</p>
+                    <p className="mt-2">{plan.workoutDetails}</p>
+                    <p className="mt-2">{plan.dietDetails}</p>
+                  </div>
+                );
+              })
             ) : (
               <p>No workout plans found</p>
             )}

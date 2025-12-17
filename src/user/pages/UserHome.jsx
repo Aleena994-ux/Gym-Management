@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import UserSidebar from "../components/UserSidebar";
 import { toast } from 'react-toastify';
-import { updateProfileAPI } from '../../services/allAPI';
+import { updateProfileAPI, makeGymPaymentAPI, confirmPaymentAPI } from '../../services/allAPI';
 import SERVERURL from '../../services/serverURL';
 
 function UserHome() {
   const [token, setToken] = useState("");
+  const [user, setUser] = useState(null);
+
   const [userDetails, setUserDetails] = useState({
     username: "",
     password: "",
@@ -13,11 +15,40 @@ function UserHome() {
     bio: "",
     profile: ""
   });
+
   const [existingProfile, setExistingProfile] = useState("");
   const [preview, setPreview] = useState("");
 
+  // =====================
+  // PAYMENT HANDLER
+  // =====================
+  const handlePayment = async () => {
+    const reqHeader = {
+      Authorization: `Bearer ${token}`
+    };
+
+    const reqBody = {
+      duration: selectedDuration  
+    };
+    
+
+    try {
+      const result = await makeGymPaymentAPI(reqBody, reqHeader);
+
+      if (result.status === 200) {
+        window.location.href = result.data.url; // redirect to Stripe checkout
+      } else {
+        toast.error("Payment failed");
+      }
+    } catch (error) {
+      toast.error("Payment failed");
+    }
+  };
+
+  // =====================
+  // RESET
+  // =====================
   const handleReset = () => {
-    const user = JSON.parse(sessionStorage.getItem("existingUser"));
     setUserDetails({
       username: user.username,
       password: user.password,
@@ -29,183 +60,177 @@ function UserHome() {
     setPreview("");
   };
 
+  // =====================
+  // FILE
+  // =====================
   const handleFile = (e) => {
     setUserDetails({ ...userDetails, profile: e.target.files[0] });
     setPreview(URL.createObjectURL(e.target.files[0]));
   };
 
+  // =====================
+  // UPDATE PROFILE
+  // =====================
   const handleSubmit = async () => {
     const { username, password, confirmPassword, bio } = userDetails;
+
     if (!username || !password || !confirmPassword) {
       toast.info("Fill details completely");
-    } else if (password !== confirmPassword) {
+      return;
+    }
+
+    if (password !== confirmPassword) {
       toast.warning("Password do not match");
-    } else {
-      const reqHeader = {
-        "Authorization": `Bearer ${token}`
-      };
+      return;
+    }
 
-      const reqBody = new FormData();
-      reqBody.append("username", username);
-      reqBody.append("password", password);
-      reqBody.append("confirmPassword", confirmPassword);
-      reqBody.append("bio", bio);
+    const reqHeader = {
+      Authorization: `Bearer ${token}`
+    };
 
-      if (preview) {
-        reqBody.append("profile", userDetails.profile);
-      } else {
-        reqBody.append("profile", existingProfile);
-      }
+    const reqBody = new FormData();
+    reqBody.append("username", username);
+    reqBody.append("password", password);
+    reqBody.append("bio", bio);
 
+    preview
+      ? reqBody.append("profile", userDetails.profile)
+      : reqBody.append("profile", existingProfile);
+
+    try {
       const result = await updateProfileAPI(reqBody, reqHeader);
 
       if (result.status === 200) {
-        toast.success("Profile updated successfully");
+        toast.success("Profile updated");
         sessionStorage.setItem("existingUser", JSON.stringify(result.data));
+        setUser(result.data);
         setExistingProfile(result.data.profile);
         setPreview("");
-      } else {
-        toast.error("Something went wrong");
       }
+    } catch (error) {
+      toast.error("Profile update failed");
     }
   };
 
+  // =====================
+  // ON LOAD
+  // =====================
   useEffect(() => {
     if (sessionStorage.getItem("token")) {
+      const storedUser = JSON.parse(sessionStorage.getItem("existingUser"));
       setToken(sessionStorage.getItem("token"));
-      const user = JSON.parse(sessionStorage.getItem("existingUser"));
+      setUser(storedUser);
+
       setUserDetails({
-        username: user.username,
-        password: user.password,
-        confirmPassword: user.password,
-        bio: user.bio || "",
+        username: storedUser.username,
+        password: storedUser.password,
+        confirmPassword: storedUser.password,
+        bio: storedUser.bio || "",
         profile: ""
       });
-      setExistingProfile(user.profile);
+
+      setExistingProfile(storedUser.profile);
+
+      // ✅ HANDLE PAYMENT SUCCESS
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("payment") === "success") {
+        const reqHeader = {
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`
+        };
+
+        confirmPaymentAPI(reqHeader)
+          .then(() => {
+            toast.success("Payment successful 🎉");
+
+            const updatedUser = {
+              ...storedUser,
+              status: "active-member",
+              paymentStatus: "paid"
+            };
+
+            sessionStorage.setItem("existingUser", JSON.stringify(updatedUser));
+            setUser(updatedUser);
+          })
+          .catch(() => {
+            toast.error("Payment confirmation failed");
+          });
+      }
     }
   }, []);
 
+  if (!user) return null;
+
   return (
-    <>
-      <div className="flex bg-black min-h-screen text-white">
-        <UserSidebar />
+    <div className="flex bg-black min-h-screen text-white">
+      <UserSidebar />
 
-        <main className="flex-1 p-10">
-          <div className="md:grid grid-cols-2 mt-10">
-            {/* LEFT */}
-            <div className="md:px-10 px-5 flex flex-col justify-center items-center">
-              <div className="text-center">
-                <img
-                  src={
-                    existingProfile === ""
-                      ? "https://cdn-icons-png.freepik.com/512/8608/8608769.png"
-                      : `${SERVERURL}/imguploads/${existingProfile}`
-                  }
-                  style={{ width: "170px", height: "170px", borderRadius: "50px" }}
-                  alt="profile"
-                />
-                <h2 className="text-2xl font-bold mt-4">{userDetails.username}</h2>
-                <p className="text-gray-400 mt-2">{userDetails.bio}</p>
-              </div>
-            </div>
+      <main className="flex-1 p-10">
+        <div className="md:grid grid-cols-2 mt-10">
 
-            {/* RIGHT */}
-            <div className="md:px-10 px-5">
-              <form className="bg-blue-200 md:p-10 p-5 rounded my-10 md:my-0">
-                <div className="flex justify-center items-center my-10">
-                  <label htmlFor="editUserProfile">
-                    <input
-                      onChange={handleFile}
-                      type="file"
-                      id="editUserProfile"
-                      style={{ display: "none" }}
-                    />
-                    <img
-                      src={
-                        preview
-                          ? preview
-                          : existingProfile === ""
-                          ? "https://cdn-icons-png.freepik.com/512/8608/8608769.png"
-                          : `${SERVERURL}/imguploads/${existingProfile}`
-                      }
-                      style={{ width: "170px", height: "170px", borderRadius: "50px" }}
-                      alt="profile"
-                    />
-                  </label>
-                </div>
+          {/* LEFT */}
+          <div className="flex flex-col items-center">
+            <img
+              src={
+                existingProfile
+                  ? `${SERVERURL}/imguploads/${existingProfile}`
+                  : "https://cdn-icons-png.freepik.com/512/8608/8608769.png"
+              }
+              className="w-40 h-40 rounded-full"
+            />
+            <h2 className="text-2xl mt-4">{user.username}</h2>
+            <p className="text-gray-400">{user.bio}</p>
 
-                <div className="mb-3">
-                  <label>Username</label>
-                  <input
-                    value={userDetails.username}
-                    onChange={(e) =>
-                      setUserDetails({ ...userDetails, username: e.target.value })
-                    }
-                    type="text"
-                    className="bg-white text-black rounded w-full p-2 mt-2"
-                  />
-                </div>
+            {/* PAY BUTTON */}
+            {user.status === "approved" && user.paymentStatus === "unpaid" && (
+              <button
+                onClick={handlePayment}
+                className="bg-green-600 px-6 py-3 rounded mt-6"
+              >
+                Pay Now
+              </button>
+            )}
 
-                <div className="mb-3">
-                  <label>Password</label>
-                  <input
-                    value={userDetails.password}
-                    onChange={(e) =>
-                      setUserDetails({ ...userDetails, password: e.target.value })
-                    }
-                    type="password"
-                    className="bg-white text-black rounded w-full p-2 mt-2"
-                  />
-                </div>
-
-                <div className="mb-3">
-                  <label>Confirm Password</label>
-                  <input
-                    value={userDetails.confirmPassword}
-                    onChange={(e) =>
-                      setUserDetails({ ...userDetails, confirmPassword: e.target.value })
-                    }
-                    type="password"
-                    className="bg-white text-black rounded w-full p-2 mt-2"
-                  />
-                </div>
-
-                {/* ✅ BIO FIELD */}
-                <div className="mb-3">
-                  <label>Bio</label>
-                  <textarea
-                    value={userDetails.bio}
-                    onChange={(e) =>
-                      setUserDetails({ ...userDetails, bio: e.target.value })
-                    }
-                    rows="3"
-                    className="bg-white text-black rounded w-full p-2 mt-2"
-                    placeholder="Tell something about yourself"
-                  />
-                </div>
-
-                <div className="flex justify-between mt-10">
-                  <button
-                    type="button"
-                    onClick={handleReset}
-                    className="bg-amber-600 text-white rounded p-4 w-1/2"
-                  >
-                    Reset
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleSubmit}
-                    className="bg-green-600 text-white rounded p-4 w-1/2 ms-3"
-                  >
-                    Update
-                  </button>
-                </div>
-              </form>
-            </div>
+            {user.status === "active-member" && (
+              <p className="text-green-400 mt-4">Active Member ✅</p>
+            )}
           </div>
-        </main>
-      </div>
-    </>
+
+          {/* RIGHT */}
+          <div>
+            <form className="bg-blue-200 p-8 rounded text-black">
+              <input
+                value={userDetails.username}
+                onChange={e => setUserDetails({ ...userDetails, username: e.target.value })}
+                className="w-full p-2 mb-3"
+              />
+
+              <input
+                type="password"
+                value={userDetails.password}
+                onChange={e => setUserDetails({ ...userDetails, password: e.target.value })}
+                className="w-full p-2 mb-3"
+              />
+
+              <textarea
+                value={userDetails.bio}
+                onChange={e => setUserDetails({ ...userDetails, bio: e.target.value })}
+                className="w-full p-2 mb-3"
+              />
+
+              <div className="flex gap-3">
+                <button type="button" onClick={handleReset} className="bg-orange-500 p-3 w-1/2">
+                  Reset
+                </button>
+                <button type="button" onClick={handleSubmit} className="bg-green-600 p-3 w-1/2">
+                  Update
+                </button>
+              </div>
+            </form>
+          </div>
+
+        </div>
+      </main>
+    </div>
   );
 }
 

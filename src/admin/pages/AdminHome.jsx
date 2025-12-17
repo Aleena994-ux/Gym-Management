@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import AdminSidebar from "../components/AdminSidebar";
-import Footer from "../../common/components/Footer";
 import { toast } from "react-toastify";
 import { updateProfileAPI } from "../../services/allAPI";
 import SERVERURL from "../../services/serverURL";
@@ -221,7 +220,6 @@ export default function AdminHome() {
           </div>
         </main>
       </div>
-      <Footer />
     </>
   );
 }

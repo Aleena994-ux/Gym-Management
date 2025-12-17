@@ -1,102 +1,110 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Header from "../../common/components/Header";
 import Footer from "../../common/components/Footer";
 import { toast } from "react-toastify";
 import { getAllTrainerAPI, submitRequestAPI } from "../../services/allAPI";
+import { useNavigate } from "react-router-dom";
 
 function UserRequest() {
+  const navigate = useNavigate();
+
   const [requestDetails, setRequestDetails] = useState({
     userName: "",
     timeSlot: "",
     bodyTypeGoal: "",
-    preferredTrainer: "",
-    plan: "",
-    duration: ""
+    preferredTrainer: ""
+ 
   });
+
   const [allTrainers, setAllTrainers] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Fetch all trainers (public access)
+  // 🔐 Check login & load trainers
+  useEffect(() => {
+    const token = sessionStorage.getItem("token");
+
+    if (!token) {
+      toast.info("Please login to send enquiry");
+      navigate("/login");
+      return; 
+
+    } else {
+      const user = JSON.parse(sessionStorage.getItem("existingUser"));
+      if (user) {
+        setRequestDetails(prev => ({
+          ...prev,
+          userName: user.username
+        }));
+      }
+      getAllTrainers();
+    }
+  }, []);
+
+  // Fetch all trainers
   const getAllTrainers = async () => {
     setLoading(true);
     try {
       const result = await getAllTrainerAPI();
-      console.log(result);
       if (result.status === 200) {
         setAllTrainers(result.data);
       } else {
         toast.error("Failed to load trainers");
       }
     } catch (error) {
-      console.log(error);
-      toast.error("Failed to fetch trainers");
+      toast.error("Trainer fetch failed");
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle form submission
+  // Submit enquiry
   const handleSubmitRequest = async () => {
-    const { userName, timeSlot, bodyTypeGoal, preferredTrainer, plan, duration } = requestDetails;
-    if (!userName || !timeSlot || !bodyTypeGoal || !preferredTrainer || !plan || !duration) {
+    const { timeSlot, bodyTypeGoal, preferredTrainer} = requestDetails;
+
+    if (!timeSlot || !bodyTypeGoal || !preferredTrainer ) {
       toast.info("Fill the form completely");
       return;
     }
 
+    const token = sessionStorage.getItem("token");
+
+    const reqHeader = {
+      Authorization: `Bearer ${token}`
+    };
+
     try {
-      const result = await submitRequestAPI(requestDetails);
-      if (result?.status === 200) {
-        toast.success("Request sent successfully!");
-        setRequestDetails({
-          userName: "",
-          timeSlot: "",
-          bodyTypeGoal: "",
-          preferredTrainer: "",
-          plan: "",
-          duration: ""
-        });
-      } else {
-        toast.error(result?.data || "Error in sending request");
+      const result = await submitRequestAPI(requestDetails, reqHeader);
+
+      if (result.status === 200) {
+        toast.success("Enquiry sent. Please wait for admin approval");
+              } else {
+        toast.error("Something went wrong");
       }
     } catch (error) {
-      console.log(error);
-      toast.error(error.response?.data || "Something went wrong");
+      toast.error("Request failed");
     }
   };
-
-  // Fetch trainers on component mount
-  useEffect(() => {
-    getAllTrainers();
-  }, []);
 
   return (
     <>
       <Header />
       <div className="flex bg-black min-h-screen text-white">
-        {/* Main Content */}
         <main className="flex-1 p-10">
-          {/* Page Title */}
-          <div className="mb-10">
-            <h2 className="text-3xl font-bold mb-2">Membership inquiry</h2>
-            <p className="text-gray-400 text-sm">
-              Simply complete this form and we will get in touch.
-            </p>
-          </div>
 
-          {/* Request Form */}
+          <h2 className="text-3xl font-bold mb-2">Membership Enquiry</h2>
+          <p className="text-gray-400 mb-8">Fill the form and wait for admin approval</p>
+
           <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
             <form className="grid md:grid-cols-2 gap-6">
-              {/* User Name */}
+
+              {/* Username (Auto-filled) */}
               <div>
                 <label className="block text-gray-300 mb-2">User Name</label>
                 <input
                   type="text"
                   value={requestDetails.userName}
-                  onChange={(e) =>
-                    setRequestDetails({ ...requestDetails, userName: e.target.value })
-                  }
-                  className="w-full p-3 bg-black border border-gray-700 rounded-lg text-white"
-                  placeholder="Enter user name"
+                  disabled
+                  className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white cursor-not-allowed"
                 />
               </div>
 
@@ -117,9 +125,9 @@ function UserRequest() {
                 </select>
               </div>
 
-              {/* Body Type Goal */}
+              {/* Body Goal */}
               <div>
-                <label className="block text-gray-300 mb-2">Body Type Goal</label>
+                <label className="block text-gray-300 mb-2">Body Goal</label>
                 <select
                   value={requestDetails.bodyTypeGoal}
                   onChange={(e) =>
@@ -134,7 +142,7 @@ function UserRequest() {
                 </select>
               </div>
 
-              {/* Preferred Trainer */}
+              {/* Trainer */}
               <div>
                 <label className="block text-gray-300 mb-2">Preferred Trainer</label>
                 <select
@@ -148,58 +156,26 @@ function UserRequest() {
                   {loading ? (
                     <option>Loading...</option>
                   ) : (
-                    allTrainers.map((trainer) => (
+                    allTrainers.map(trainer => (
                       <option key={trainer._id} value={trainer._id}>
-                        {trainer.name} ({trainer.specialization})
+                        {trainer.name}
                       </option>
                     ))
                   )}
                 </select>
               </div>
 
-              {/* Plan */}
-              <div>
-                <label className="block text-gray-300 mb-2">Plan</label>
-                <select
-                  value={requestDetails.plan}
-                  onChange={(e) =>
-                    setRequestDetails({ ...requestDetails, plan: e.target.value })
-                  }
-                  className="w-full p-3 bg-black border border-gray-700 rounded-lg text-white"
-                >
-                  <option value="">Select plan</option>
-                  <option value="Basic">Basic</option>
-                  <option value="Standard">Standard</option>
-                  <option value="Premium">Premium</option>
-                </select>
-              </div>
 
-              {/* Duration */}
-              <div>
-                <label className="block text-gray-300 mb-2">Duration</label>
-                <select
-                  value={requestDetails.duration}
-                  onChange={(e) =>
-                    setRequestDetails({ ...requestDetails, duration: e.target.value })
-                  }
-                  className="w-full p-3 bg-black border border-gray-700 rounded-lg text-white"
-                >
-                  <option value="">Select duration</option>
-                  <option value="Monthly">Monthly</option>
-                  <option value="3 Months">3 Months</option>
-                  <option value="6 Months">6 Months</option>
-                </select>
-              </div>
             </form>
 
-            {/* Submit Button */}
             <button
               onClick={handleSubmitRequest}
               className="mt-6 bg-red-800 px-8 py-3 rounded-lg font-semibold hover:bg-red-900"
             >
-              Send Request
+              Send Enquiry
             </button>
           </div>
+
         </main>
       </div>
       <Footer />

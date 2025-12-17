@@ -104,8 +104,7 @@ function AdminEnquiry() {
                 <p className="text-gray-300">Time Slot: {request?.timeSlot}</p>
                 <p className="text-gray-300">Goal: {request?.bodyTypeGoal}</p>
                 <p className="text-gray-300">Trainer: {getTrainerDetails(request?.preferredTrainer)}</p>
-                <p className="text-gray-300">Plan: {request?.plan}</p>
-                <p className="text-gray-300">Duration: {request?.duration}</p>
+
                 <p className="text-gray-300">Status: {request?.status}</p>
 
                 {request?.status === "pending" && (
@@ -138,7 +137,7 @@ function AdminEnquiry() {
                 {request?.status === "rejected" && (
                   <div className="w-full flex justify-end mt-3">
                     <img
-                      src="https://img.icons8.com/color/48/cancel.png" // Red X icon for rejected
+                      src="https://img.icons8.com/color/48/cancel.png" 
                       style={{ width: "50px", borderRadius: "50%" }}
                       alt="Rejected"
                     />

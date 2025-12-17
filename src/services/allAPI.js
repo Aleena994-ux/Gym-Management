@@ -66,9 +66,13 @@ export const deleteRequestAPI = async (id, reqHeader) => {
 
 // ------------- User ----------------
 // Submit request
-export const submitRequestAPI = async (reqBody) => {
-    return await commonAPI("POST", `${SERVERURL}/submit-request`, reqBody);
-};
+// export const submitRequestAPI = async (reqBody) => {
+//     return await commonAPI("POST", `${SERVERURL}/submit-request`, reqBody);
+// };
+export const submitRequestAPI = (reqBody, reqHeader) => {
+    return commonAPI("POST", `${SERVERURL}/submit-request`, reqBody, reqHeader);
+  };
+  
 
 
 // Mark attendance
@@ -87,6 +91,23 @@ export const updateProfileAPI = async (reqBody, reqHeader) => {
     return await commonAPI("PUT", `${SERVERURL}/update-profile`, reqBody, reqHeader)
   }
 
+  export const makeGymPaymentAPI = async (reqBody, reqHeader) => {
+  return await commonAPI(
+    "PUT",
+    `${SERVERURL}/make-gym-payment`,
+    reqBody,
+    reqHeader
+  );
+};
+export const confirmPaymentAPI = (reqHeader) => {
+    return commonAPI(
+      "PUT",
+      `${SERVERURL}/confirm-gym-payment`,
+      {},
+      reqHeader
+    );
+  };
+  
 //   ---------------trainer--------------
   
   // Trainer login
@@ -105,4 +126,8 @@ export const getAllWorkoutPlansAPI = async (reqHeader) => {
 // Get user's own workout plans
 export const getUserWorkoutPlansAPI = async (reqHeader) => {
     return await commonAPI("GET", `${SERVERURL}/user-workout-plans`, {}, reqHeader);
+};
+// Get all users for trainer
+export const getAllUsersForTrainerAPI = async (reqHeader) => {
+    return await commonAPI("GET", `${SERVERURL}/all-users-trainer`, {}, reqHeader);
 };

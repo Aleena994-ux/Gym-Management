@@ -1,44 +1,63 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import { getAllUsersForTrainerAPI } from "../../services/allAPI";
 import TrainerSidebar from "../components/TrainerSidebar";
 
-export default function AssignedUsers() {
+function AssignedUsers() {
+  const [users, setUsers] = useState([]);
+  const [token, setToken] = useState("");
+
+  useEffect(() => {
+    const storedToken = sessionStorage.getItem("token");
+    if (storedToken) setToken(storedToken);
+  }, []);
+
+  const getAssignedUsers = async () => {
+    try {
+      const result = await getAllUsersForTrainerAPI({
+        Authorization: `Bearer ${token}`,
+      });
+
+      if (result.status === 200) {
+        setUsers(result.data);
+      }
+    } catch (error) {
+      toast.error("Failed to fetch assigned users");
+    }
+  };
+
+  useEffect(() => {
+    if (token) {
+      getAssignedUsers();
+    }
+  }, [token]);
+
   return (
-    <div className="flex bg-black text-white min-h-screen">
+    <div className="flex bg-black min-h-screen text-white">
       <TrainerSidebar />
+
       <main className="flex-1 p-10">
-        <h1 className="text-3xl font-bold mb-4">Assigned Users</h1>
+        <h1 className="text-3xl font-bold mb-6">My Assigned Users</h1>
 
-        <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
-          <h3 className="text-xl font-semibold mb-4">Users Assigned to You</h3>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-gray-700 text-gray-300">
-                  <th className="p-3">User</th>
-                  <th className="p-3">Time Slot</th>
-                  <th className="p-3">Plan</th>
-                  <th className="p-3">Contact</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {/* Static row - replace later with dynamic data */}
-                <tr className="border-b border-gray-800">
-                  <td className="p-3">Akhil</td>
-                  <td className="p-3">6 AM - 7 AM</td>
-                  <td className="p-3">Standard</td>
-                  <td className="p-3">akil@gmail.com</td>
-                  <td className="p-3 flex gap-2">
-
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
+        <div className="grid md:grid-cols-2 gap-6">
+          {users.length > 0 ? (
+            users.map((user) => (
+              <div
+                key={user._id}
+                className="bg-gray-900 p-5 rounded-lg border border-gray-800"
+              >
+                <h3 className="text-xl font-bold">{user.username}</h3>
+                <p className="text-gray-400">Email: {user.email}</p>
+                <p className="text-gray-400">Status: {user.status}</p>
+              </div>
+            ))
+          ) : (
+            <p>No assigned users found.</p>
+          )}
         </div>
       </main>
-    </div>
-  );
+    </div>
+  );
 }
+
+export default AssignedUsers;

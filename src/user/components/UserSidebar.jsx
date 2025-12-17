@@ -10,6 +10,8 @@ function UserSidebar() {
     // Remove user data
     sessionStorage.removeItem("existingUser");
     sessionStorage.removeItem("token");
+    sessionStorage.clear();   
+
 
     // Toast success message
     toast.success("Logged out successfully!", {
@@ -37,10 +39,6 @@ function UserSidebar() {
 
           <Link to="/user-attendances" className="hover:text-red-400">
            Attendance
-          </Link>
-
-          <Link to="/user-membership" className="hover:text-red-400">
-           Membership
           </Link>
 
           <Link to="/user-workoutplan" className="hover:text-red-400">

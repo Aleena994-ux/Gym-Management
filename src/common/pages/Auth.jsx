@@ -64,9 +64,39 @@ function Auth({ register }) {
         toast.success("Login Successful");
 
         // Navigate based on role
-        if (role === "admin") navigate("/admin-home");
-        else if (role === "trainer") navigate("/trainer-home");
-        else navigate("/user-home");
+// Navigate based on role
+if (role === "admin") {
+  navigate("/admin-home");
+
+} else if (role === "trainer") {
+  navigate("/trainer-home");
+
+} else {
+  // USER FLOW
+  const user = result.data.existingUser;
+
+  // ✅ ADMIN CHECK FIRST
+  if (user.role === "admin") {
+    navigate("/admin-home");
+    return;
+  }
+  
+  // ✅ NORMAL USER FLOW
+  if (user.status === "registered") {
+    navigate("/user-request");
+  }
+  else if (user.status === "enquiry-submitted") {
+    toast.info("Please wait for admin approval");
+    navigate("/user-home");
+  }
+  else if (user.status === "approved") {
+    navigate("/user-payment");
+  }
+  else if (user.status === "active-member") {
+    navigate("/user-home");
+  }
+  
+}  
 
         setUserDetails({ username: "", email: "", password: "" });
       } else if (result.status === 404) {
